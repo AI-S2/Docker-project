@@ -1,1 +1,35 @@
-:contentReference[oaicite:34]{index=34}
+
+# Install necessary packagesAdd commentMore actions
+RUN apt update -y && \
+    apt install -y unzip default-jdk && \
+    apt install -y unzip default-jdk wget && \
+    apt clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Download and extract Tomcat
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.98/bin/apache-tomcat-9.0.98.zip /opt
+RUN unzip /opt/apache-tomcat-9.0.98.zip -d /opt
+# Download and extract Tomcat from Apache Archive
+WORKDIR /opt
+RUN wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.85/bin/apache-tomcat-9.0.85.zip && \
+    unzip apache-tomcat-9.0.85.zip && \
+    rm apache-tomcat-9.0.85.zip
+
+# Set up Tomcat and deploy the WAR file
+WORKDIR /opt/apache-tomcat-9.0.98/
+ADD https://s3-us-west-2.amazonaws.com/studentapi-cit/student.war /opt/apache-tomcat-9.0.98/webapps/
+ADD https://s3-us-west-2.amazonaws.com/studentapi-cit/mysql-connector.jar /opt/apache-tomcat-9.0.98/lib/mysql-connector.jar
+COPY context.xml /opt/apache-tomcat-9.0.98/conf/context.xml
+WORKDIR /opt/apache-tomcat-9.0.85
+ADD https://s3-us-west-2.amazonaws.com/studentapi-cit/student.war /opt/apache-tomcat-9.0.85/webapps/
+ADD https://s3-us-west-2.amazonaws.com/studentapi-cit/mysql-connector.jar /opt/apache-tomcat-9.0.85/lib/mysql-connector.jar
+COPY context.xml /opt/apache-tomcat-9.0.85/conf/context.xml
+
+# Set permissions and run Tomcat
+RUN chmod +rwx /opt/apache-tomcat-9.0.98/bin/*.sh
+RUN chmod +rwx /opt/apache-tomcat-9.0.85/bin/*.sh
+
+CMD ["/opt/apache-tomcat-9.0.98/bin/catalina.sh", "run"]
+CMD ["/opt/apache-tomcat-9.0.85/bin/catalina.sh", "run"]
+
+EXPOSE 8080
